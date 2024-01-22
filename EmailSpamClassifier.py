@@ -1,29 +1,72 @@
-import numpy as np 
-import pandas as pd 
+import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score, classification_report
 
-df = pd.read_csv('D:\PROGRAMMING\Email Spam Classifier/Datasets.csv')
+# Function to load and preprocess the dataset
+def load_and_preprocess_data(file_path):
+    # Load the dataset
+    data = pd.read_csv(file_path)
 
-data = df.where((pd.notnull(df)), '')
+    # Print the column names to identify the correct names
+    print("Column Names:", data.columns)
 
-data.loc[data['Category'] == 'spam', 'Category',] = 0
-data.loc[data['Category'] == 'ham', 'Category',] = 1
+    # Update the column names based on your dataset
+    # Replace 'message' and 'label' with the actual names 'Message' and 'Category'
+    train_data, test_data, train_labels, test_labels = train_test_split(
+        data['Message'], data['Category'], test_size=0.2, random_state=42
+    )
 
-X = data['Message']
-Y = data['Category']
+    # Convert text data to numerical features using CountVectorizer
+    vectorizer = CountVectorizer()
+    train_features = vectorizer.fit_transform(train_data)
+    test_features = vectorizer.transform(test_data)
 
-#Testing and Training
-X_train, X_test, Y_train, Y_test = train_test_split(X,Y, test_size=0.2, random_state=3)
+    return train_features, test_features, train_labels, test_labels
 
-feature_extraction = TfidfVectorizer(min_df= 1, stop_words= 'english', lowercase= 'True')
-X_train_features = feature_extraction.fit_transform(X_train)
-X_test_features = feature_extraction.transform(X_test)
 
-Y_train = Y_train.astype('int')
-Y_test = Y_test.astype('int')
+    # Convert text data to numerical features using CountVectorizer
+    vectorizer = CountVectorizer()
+    train_features = vectorizer.fit_transform(train_data)
+    test_features = vectorizer.transform(test_data)
 
-model = LogisticRegression()
-model.fit(X_train_features, Y_train)
+    return train_features, test_features, train_labels, test_labels
+
+# Function to train and evaluate the classifier
+def train_and_evaluate_classifier(train_features, test_features, train_labels, test_labels, algorithm):
+    # Train the classifier
+    classifier = algorithm()
+    classifier.fit(train_features, train_labels)
+
+    # Make predictions on the test set
+    predictions = classifier.predict(test_features)
+
+    # Evaluate the performance
+    accuracy = accuracy_score(test_labels, predictions)
+    report = classification_report(test_labels, predictions)
+
+    return accuracy, report
+
+# Function to compare different algorithms
+def compare_algorithms(file_path):
+    # Load and preprocess the dataset
+    train_features, test_features, train_labels, test_labels = load_and_preprocess_data(file_path)
+
+    # Define algorithms to compare
+    algorithms = [MultinomialNB, DecisionTreeClassifier]
+
+    # Compare algorithms
+    for algorithm in algorithms:
+        print(f"\nResults for {algorithm.__name__}:")
+        accuracy, report = train_and_evaluate_classifier(train_features, test_features, train_labels, test_labels, algorithm)
+        print(f"Accuracy: {accuracy}")
+        print("Classification Report:\n", report)
+
+# Specify the path to your dataset CSV file
+# You can find datasets on Kaggle, UCI Machine Learning Repository, or use your custom dataset
+dataset_path = 'D:\PROGRAMMING\Email Spam Classifier\\Datasets.csv'
+
+# Call the function to compare algorithms
+compare_algorithms(dataset_path)
